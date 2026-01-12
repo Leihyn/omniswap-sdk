@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSwap SDK - Cross-Chain Privacy Swaps</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>OmniSwap SDK</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#docs">Documentation</a></li>
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="https://github.com/omniswap/omniswap-sdk">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>Cross-Chain Privacy Swaps Made Simple</h1>
+            <p class="subtitle">Seamless, secure, and private atomic swaps across 6 blockchain networks</p>
+            <div class="cta-buttons">
+                <a href="#docs" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/omniswap/omniswap-sdk" class="btn btn-secondary">View on GitHub</a>
+            </div>
+            <div class="hero-code">
+                <pre><code>npm install omniswap-sdk</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Cross-Chain</h3>
+                    <p>Swap assets between Zcash, Osmosis, Fhenix, Aztec, Miden, and Mina</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Privacy-First</h3>
+                    <p>Built-in stealth addresses, timing decorrelation, and correlation-breaking</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Atomic Swaps</h3>
+                    <p>HTLC-based atomic swaps ensuring trustless execution</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Intent-Based</h3>
+                    <p>Express what you want, let solvers handle execution</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Secure</h3>
+                    <p>No trusted third parties, fully decentralized</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍💻</div>
+                    <h3>Developer-Friendly</h3>
+                    <p>Simple API, comprehensive docs, TypeScript support</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="chains" class="chains">
+        <div class="container">
+            <h2>Supported Blockchains</h2>
+            <div class="chain-grid">
+                <div class="chain-card">
+                    <h3>Zcash</h3>
+                    <p class="chain-tech">Sapling zkSNARKs</p>
+                    <p>Shielded transactions with privacy by default</p>
+                </div>
+                <div class="chain-card">
+                    <h3>Osmosis</h3>
+                    <p class="chain-tech">Cosmos/IBC</p>
+                    <p>Fast IBC transfers and AMM swaps</p>
+                </div>
+                <div class="chain-card">
+                    <h3>Fhenix</h3>
+                    <p class="chain-tech">FHE</p>
+                    <p>Fully homomorphic encrypted computation</p>
+                </div>
+                <div class="chain-card">
+                    <h3>Aztec</h3>
+                    <p class="chain-tech">zkSNARKs/Noir</p>
+                    <p>Private Layer 2 with encrypted state</p>
+                </div>
+                <div class="chain-card">
+                    <h3>Miden</h3>
+                    <p class="chain-tech">zkSTARKs</p>
+                    <p>Note-based privacy with STARK proofs</p>
+                </div>
+                <div class="chain-card">
+                    <h3>Mina</h3>
+                    <p class="chain-tech">Kimchi/o1js</p>
+                    <p>zkApp proofs with succinct blockchain</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="quickstart" class="quickstart">
+        <div class="container">
+            <h2>Quick Start</h2>
+            <div class="code-example">
+                <pre><code class="language-typescript">import { OmniSwap, Chain } from 'omniswap-sdk';
+
+// Initialize SDK
+const omniswap = new OmniSwap({
+  environment: 'mainnet',
+});
+
+await omniswap.initialize({
+  [Chain.ZCASH]: { rpcUrl: 'https://zcash-rpc.example.com' },
+  [Chain.OSMOSIS]: { rpcUrl: 'https://osmosis-rpc.example.com' },
+});
+
+// Get quotes
+const quotes = await omniswap.getQuote({
+  sourceChain: Chain.ZCASH,
+  destChain: Chain.OSMOSIS,
+  sourceAsset: 'ZEC',
+  destAsset: 'OSMO',
+  sourceAmount: BigInt(1e8), // 1 ZEC
+  userAddress: {
+    [Chain.ZCASH]: 't1YourZcashAddress',
+    [Chain.OSMOSIS]: 'osmo1YourOsmosisAddress',
+  },
+});
+
+// Execute swap
+const execution = await omniswap.executeSwap(quotes[0]);
+
+// Monitor status
+omniswap.subscribeToSwap(execution.swapId, (update) => {
+  console.log('Status:', update.status);
+});</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="privacy" class="privacy-hub">
+        <div class="container">
+            <h2>Privacy Hub Architecture</h2>
+            <p class="section-subtitle">Break on-chain correlation with our advanced privacy features</p>
+            <div class="privacy-features">
+                <div class="privacy-feature">
+                    <h3>🔐 Different Hashlocks</h3>
+                    <p>Source and destination use independent secrets, preventing hashlock correlation</p>
+                </div>
+                <div class="privacy-feature">
+                    <h3>👤 Stealth Addresses</h3>
+                    <p>One-time addresses generated for each swap to prevent address reuse analysis</p>
+                </div>
+                <div class="privacy-feature">
+                    <h3>⏱️ Timing Decorrelation</h3>
+                    <p>CSPRNG + Log-Normal distributed delays prevent timing analysis attacks</p>
+                </div>
+                <div class="privacy-feature">
+                    <h3>🌀 Shielded Mixing</h3>
+                    <p>Funds pass through Zcash Sapling pool for unlinkability</p>
+                </div>
+            </div>
+            <div class="privacy-diagram">
+                <pre>User (Chain A) ──HTLC₁──> Privacy Hub (Zcash) ──HTLC₂──> Solver (Chain B)
+      │                         ▲                                      │
+      │                    Different secrets                           │
+      └─────────────────────────┴──────────────────────────────────────┘
+                          No on-chain link!</pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="docs" class="documentation">
+        <div class="container">
+            <h2>Documentation</h2>
+            <div class="doc-grid">
+                <a href="../docs/01-introduction.md" class="doc-card">
+                    <h3>1. Introduction</h3>
+                    <p>Get started with OmniSwap SDK, installation, and basic concepts</p>
+                </a>
+                <a href="../docs/02-use-cases.md" class="doc-card">
+                    <h3>2. Use Cases</h3>
+                    <p>Real-world applications and integration patterns</p>
+                </a>
+                <a href="../docs/03-api-reference.md" class="doc-card">
+                    <h3>3. API Reference</h3>
+                    <p>Complete API documentation for all SDK methods</p>
+                </a>
+                <a href="../docs/04-how-to-guides.md" class="doc-card">
+                    <h3>4. How-To Guides</h3>
+                    <p>Step-by-step tutorials for common tasks</p>
+                </a>
+                <a href="../docs/05-faq.md" class="doc-card">
+                    <h3>5. FAQ & Troubleshooting</h3>
+                    <p>Common questions and solutions</p>
+                </a>
+                <a href="../examples/" class="doc-card">
+                    <h3>6. Examples</h3>
+                    <p>Working code examples for various scenarios</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="examples" class="examples">
+        <div class="container">
+            <h2>Examples</h2>
+            <div class="example-grid">
+                <div class="example-card">
+                    <h3>Basic Swap</h3>
+                    <p>Simple cross-chain swap from Zcash to Osmosis</p>
+                    <a href="../examples/basic-swap.ts" class="example-link">View Code →</a>
+                </div>
+                <div class="example-card">
+                    <h3>Privacy Swap</h3>
+                    <p>Maximum privacy swap with stealth addresses</p>
+                    <a href="../examples/privacy-swap.ts" class="example-link">View Code →</a>
+                </div>
+                <div class="example-card">
+                    <h3>Error Handling</h3>
+                    <p>Robust error handling and retry patterns</p>
+                    <a href="../examples/error-handling.ts" class="example-link">View Code →</a>
+                </div>
+                <div class="example-card">
+                    <h3>Refund Monitoring</h3>
+                    <p>Automatic refund management and monitoring</p>
+                    <a href="../examples/refund-monitoring.ts" class="example-link">View Code →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Get Started?</h2>
+            <p>Install OmniSwap SDK and start building cross-chain applications today</p>
+            <div class="cta-buttons">
+                <a href="../docs/01-introduction.md" class="btn btn-primary">Read Documentation</a>
+                <a href="https://github.com/omniswap/omniswap-sdk" class="btn btn-secondary">View on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>OmniSwap SDK</h4>
+                    <p>Cross-chain privacy swaps for the decentralized future</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="../docs/README.md">Documentation</a></li>
+                        <li><a href="../examples/">Examples</a></li>
+                        <li><a href="https://github.com/omniswap/omniswap-sdk">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://discord.gg/omniswap">Discord</a></li>
+                        <li><a href="https://twitter.com/omniswap">Twitter</a></li>
+                        <li><a href="mailto:support@omniswap.io">Email</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 OmniSwap SDK. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

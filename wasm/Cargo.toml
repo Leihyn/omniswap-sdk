@@ -1,0 +1,41 @@
+[package]
+name = "zcash-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bindings for Zcash cryptography"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["console"] }
+
+# Core crypto primitives (WASM-compatible)
+bls12_381 = "0.8"
+group = "0.13"
+ff = "0.13"
+jubjub = "0.10"
+blake2b_simd = "1.0"
+blake2s_simd = "1.0"
+
+# Utilities
+rand = "0.8"
+getrandom = { version = "0.2", features = ["js"] }
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+serde_json = "1.0"
+hex = "0.4"
+sha2 = "0.10"
+ripemd = "0.1"
+bs58 = "0.5"
+bech32 = "0.9"
+k256 = { version = "0.13", features = ["ecdsa"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true

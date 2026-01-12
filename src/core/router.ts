@@ -1,0 +1,346 @@
+import {
+  SwapIntent,
+  Route,
+  RouteHop,
+  Chain,
+  SwapMechanism,
+  PrivacyLevel,
+  Asset,
+} from '../types';
+import { AdapterRegistry } from '../adapters';
+
+interface LiquidityNode {
+  chain: Chain;
+  asset: string;
+  liquidity: bigint;
+}
+
+interface LiquidityEdge {
+  from: LiquidityNode;
+  to: LiquidityNode;
+  mechanism: SwapMechanism;
+  venue: string;
+  fee: number;
+  estimatedTime: number;
+}
+
+export class RouteOptimizer {
+  private adapters: AdapterRegistry;
+  private liquidityGraph: Map<string, LiquidityEdge[]> = new Map();
+
+  constructor(adapters: AdapterRegistry) {
+    this.adapters = adapters;
+  }
+
+  async findRoutes(intent: SwapIntent): Promise<Route[]> {
+    // 1. Build graph of all possible paths
+    await this.buildLiquidityGraph(intent.sourceChain, intent.destChain);
+
+    // 2. Find candidate paths
+    const paths = this.findKShortestPaths(
+      this.nodeKey(intent.sourceChain, intent.sourceAsset.symbol),
+      this.nodeKey(intent.destChain, intent.destAsset.symbol),
+      5
+    );
+
+    // 3. Simulate each path for accurate quotes
+    const simulatedRoutes = await Promise.all(
+      paths.map(path => this.simulateRoute(path, intent.sourceAmount))
+    );
+
+    // 4. Score and rank routes
+    const scoredRoutes = simulatedRoutes.map(route => ({
+      ...route,
+      score: this.calculateRouteScore(route, intent),
+    }));
+
+    // 5. Return top routes sorted by score
+    return scoredRoutes
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }
+
+  async findPrivateRoute(intent: SwapIntent): Promise<Route> {
+    const routes = await this.findRoutes(intent);
+
+    // Filter for privacy-optimized routes
+    const privateRoutes = routes.filter(r => r.privacyScore >= 70);
+
+    if (privateRoutes.length === 0) {
+      throw new Error('No private routes available for this swap');
+    }
+
+    return privateRoutes[0];
+  }
+
+  private async buildLiquidityGraph(
+    sourceChain: Chain,
+    destChain: Chain
+  ): Promise<void> {
+    this.liquidityGraph.clear();
+
+    // Add direct route if available
+    await this.addDirectRoute(sourceChain, destChain);
+
+    // Add intermediate routes through Osmosis (liquidity hub)
+    if (sourceChain !== Chain.OSMOSIS && destChain !== Chain.OSMOSIS) {
+      await this.addHubRoute(sourceChain, destChain, Chain.OSMOSIS);
+    }
+
+    // Add IBC routes for Cosmos chains
+    await this.addIBCRoutes(sourceChain, destChain);
+  }
+
+  private async addDirectRoute(from: Chain, to: Chain): Promise<void> {
+    const edges = this.getDirectEdges(from, to);
+    for (const edge of edges) {
+      this.addEdge(edge);
+    }
+  }
+
+  private async addHubRoute(from: Chain, to: Chain, hub: Chain): Promise<void> {
+    const toHub = this.getDirectEdges(from, hub);
+    const fromHub = this.getDirectEdges(hub, to);
+
+    for (const edge of [...toHub, ...fromHub]) {
+      this.addEdge(edge);
+    }
+  }
+
+  private async addIBCRoutes(from: Chain, to: Chain): Promise<void> {
+    // Add IBC transfer routes for Cosmos ecosystem
+    if (this.isCosmosChain(from) || this.isCosmosChain(to)) {
+      const ibcEdges = this.getIBCEdges(from, to);
+      for (const edge of ibcEdges) {
+        this.addEdge(edge);
+      }
+    }
+  }
+
+  private getDirectEdges(from: Chain, to: Chain): LiquidityEdge[] {
+    const edges: LiquidityEdge[] = [];
+
+    // Atomic swap always available
+    edges.push({
+      from: { chain: from, asset: 'native', liquidity: BigInt(1e18) },
+      to: { chain: to, asset: 'native', liquidity: BigInt(1e18) },
+      mechanism: SwapMechanism.ATOMIC_SWAP,
+      venue: 'omniswap-htlc',
+      fee: 0.003,
+      estimatedTime: 1200,
+    });
+
+    // Add bridge routes for EVM chains
+    if (this.isEVMChain(from) && this.isEVMChain(to)) {
+      edges.push({
+        from: { chain: from, asset: 'native', liquidity: BigInt(1e18) },
+        to: { chain: to, asset: 'native', liquidity: BigInt(1e18) },
+        mechanism: SwapMechanism.BRIDGE,
+        venue: 'thorchain',
+        fee: 0.005,
+        estimatedTime: 600,
+      });
+    }
+
+    return edges;
+  }
+
+  private getIBCEdges(from: Chain, to: Chain): LiquidityEdge[] {
+    if (!this.isCosmosChain(from) || !this.isCosmosChain(to)) {
+      return [];
+    }
+
+    return [{
+      from: { chain: from, asset: 'native', liquidity: BigInt(1e18) },
+      to: { chain: to, asset: 'native', liquidity: BigInt(1e18) },
+      mechanism: SwapMechanism.IBC_TRANSFER,
+      venue: 'ibc',
+      fee: 0.001,
+      estimatedTime: 60,
+    }];
+  }
+
+  private addEdge(edge: LiquidityEdge): void {
+    const key = this.nodeKey(edge.from.chain, edge.from.asset);
+    const edges = this.liquidityGraph.get(key) || [];
+    edges.push(edge);
+    this.liquidityGraph.set(key, edges);
+  }
+
+  private findKShortestPaths(
+    startKey: string,
+    endKey: string,
+    k: number
+  ): LiquidityEdge[][] {
+    const paths: LiquidityEdge[][] = [];
+    const queue: { path: LiquidityEdge[]; cost: number }[] = [];
+
+    // Initialize with edges from start
+    const startEdges = this.liquidityGraph.get(startKey) || [];
+    for (const edge of startEdges) {
+      queue.push({ path: [edge], cost: edge.fee });
+    }
+
+    // Sort by cost
+    queue.sort((a, b) => a.cost - b.cost);
+
+    while (queue.length > 0 && paths.length < k) {
+      const current = queue.shift()!;
+      const lastEdge = current.path[current.path.length - 1];
+      const lastKey = this.nodeKey(lastEdge.to.chain, lastEdge.to.asset);
+
+      if (lastKey === endKey) {
+        paths.push(current.path);
+        continue;
+      }
+
+      // Extend path
+      const nextEdges = this.liquidityGraph.get(lastKey) || [];
+      for (const edge of nextEdges) {
+        // Avoid cycles
+        const visited = new Set(
+          current.path.map(e => this.nodeKey(e.from.chain, e.from.asset))
+        );
+        if (visited.has(this.nodeKey(edge.to.chain, edge.to.asset))) {
+          continue;
+        }
+
+        queue.push({
+          path: [...current.path, edge],
+          cost: current.cost + edge.fee,
+        });
+      }
+
+      // Re-sort
+      queue.sort((a, b) => a.cost - b.cost);
+    }
+
+    return paths;
+  }
+
+  private async simulateRoute(
+    path: LiquidityEdge[],
+    inputAmount: bigint
+  ): Promise<Route> {
+    let currentAmount = inputAmount;
+    const hops: RouteHop[] = [];
+    let totalFees = BigInt(0);
+    let totalTime = 0;
+
+    for (const edge of path) {
+      const fee = BigInt(Math.floor(Number(currentAmount) * edge.fee));
+      const output = currentAmount - fee;
+
+      hops.push({
+        fromChain: edge.from.chain,
+        toChain: edge.to.chain,
+        fromAsset: this.createAsset(edge.from.asset, edge.from.chain),
+        toAsset: this.createAsset(edge.to.asset, edge.to.chain),
+        mechanism: edge.mechanism,
+        venue: edge.venue,
+        estimatedOutput: output,
+        fee,
+      });
+
+      currentAmount = output;
+      totalFees += fee;
+      totalTime += edge.estimatedTime;
+    }
+
+    return {
+      id: `route_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      hops,
+      estimatedOutput: currentAmount,
+      estimatedFees: {
+        protocolFee: totalFees / BigInt(3),
+        networkFees: {},
+        solverFee: (totalFees * BigInt(2)) / BigInt(3),
+        total: totalFees,
+      },
+      estimatedTime: totalTime,
+      slippageRisk: this.calculateSlippageRisk(path),
+      liquidityDepth: this.calculateLiquidityDepth(path),
+      priceImpact: Number(totalFees) / Number(inputAmount),
+      privacyScore: this.calculatePrivacyScore(path),
+    };
+  }
+
+  private calculateRouteScore(route: Route, intent: SwapIntent): number {
+    const outputScore = Number(route.estimatedOutput) / Number(intent.sourceAmount);
+    const feeScore = 1 - Number(route.estimatedFees.total) / Number(intent.sourceAmount);
+    const timeScore = 1 - route.estimatedTime / 3600;
+    const privacyScore = route.privacyScore / 100;
+
+    // Adjust weights based on privacy preference
+    let privacyWeight = 0.2;
+    if (intent.privacyLevel === PrivacyLevel.ENHANCED) privacyWeight = 0.4;
+    if (intent.privacyLevel === PrivacyLevel.MAXIMUM) privacyWeight = 0.6;
+
+    const outputWeight = (1 - privacyWeight) * 0.5;
+    const feeWeight = (1 - privacyWeight) * 0.4;
+    const timeWeight = (1 - privacyWeight) * 0.1;
+
+    return (
+      outputScore * outputWeight +
+      feeScore * feeWeight +
+      timeScore * timeWeight +
+      privacyScore * privacyWeight
+    );
+  }
+
+  private calculateSlippageRisk(path: LiquidityEdge[]): number {
+    return path.reduce((risk, edge) => {
+      if (edge.mechanism === SwapMechanism.AMM_SWAP) {
+        return risk + 0.02;
+      }
+      return risk + 0.001;
+    }, 0);
+  }
+
+  private calculateLiquidityDepth(path: LiquidityEdge[]): bigint {
+    return path.reduce(
+      (min, edge) => edge.from.liquidity < min ? edge.from.liquidity : min,
+      BigInt(1e18)
+    );
+  }
+
+  private calculatePrivacyScore(path: LiquidityEdge[]): number {
+    let score = 100;
+
+    for (const edge of path) {
+      // Deduct for non-privacy chains
+      if (!this.isPrivacyChain(edge.from.chain)) score -= 15;
+      if (!this.isPrivacyChain(edge.to.chain)) score -= 15;
+
+      // Deduct for bridges
+      if (edge.mechanism === SwapMechanism.BRIDGE) score -= 20;
+    }
+
+    return Math.max(0, score);
+  }
+
+  private nodeKey(chain: Chain, asset: string): string {
+    return `${chain}:${asset}`;
+  }
+
+  private createAsset(symbol: string, chain: Chain): Asset {
+    return {
+      symbol,
+      name: symbol,
+      decimals: 8,
+      chain,
+    };
+  }
+
+  private isCosmosChain(chain: Chain): boolean {
+    return chain === Chain.OSMOSIS;
+  }
+
+  private isEVMChain(chain: Chain): boolean {
+    return chain === Chain.FHENIX || chain === Chain.AZTEC;
+  }
+
+  private isPrivacyChain(chain: Chain): boolean {
+    return [Chain.ZCASH, Chain.MIDEN, Chain.AZTEC, Chain.MINA].includes(chain);
+  }
+}

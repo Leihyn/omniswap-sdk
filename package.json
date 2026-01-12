@@ -1,0 +1,52 @@
+{
+  "name": "omniswap-sdk",
+  "version": "1.0.0",
+  "description": "Cross-chain privacy swap SDK - bridges and interoperability for 6 blockchains",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src --ext .ts",
+    "example:basic": "ts-node examples/basic-swap.ts",
+    "example:privacy": "ts-node examples/privacy-swap.ts",
+    "example:errors": "ts-node examples/error-handling.ts",
+    "example:refund": "ts-node examples/refund-monitoring.ts",
+    "example:multi": "ts-node examples/multi-chain.ts"
+  },
+  "keywords": [
+    "cross-chain",
+    "atomic-swap",
+    "privacy",
+    "zcash",
+    "bridge",
+    "interoperability",
+    "htlc",
+    "aztec",
+    "miden",
+    "mina",
+    "fhenix",
+    "osmosis",
+    "zksnark",
+    "zkstark"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
