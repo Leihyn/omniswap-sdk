@@ -1,5 +1,10 @@
 # OmniSwap SDK
 
+[![CI](https://github.com/Leihyn/omniswap-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/Leihyn/omniswap-sdk/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-green.svg)](https://nodejs.org/)
+
 A cross-chain privacy swap SDK enabling atomic swaps across 6 heterogeneous blockchains with unlinkable, untraceable transactions.
 
 ## Features

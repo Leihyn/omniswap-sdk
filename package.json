@@ -36,8 +36,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/Leihyn/omniswap-sdk.git"
   },
+  "bugs": {
+    "url": "https://github.com/Leihyn/omniswap-sdk/issues"
+  },
+  "homepage": "https://github.com/Leihyn/omniswap-sdk#readme",
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
