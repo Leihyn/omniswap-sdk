@@ -172,6 +172,8 @@ export interface ExecutionStep {
   error?: string;
   startedAt?: number;
   completedAt?: number;
+  htlcId?: string;
+  timelock?: number;
 }
 
 export interface SwapExecution {

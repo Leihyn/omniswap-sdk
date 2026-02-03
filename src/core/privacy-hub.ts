@@ -588,10 +588,25 @@ export class PrivacyHubCoordinator {
     const result: bigint[] = [];
     let remaining = amount;
 
-    for (const denom of this.config.splitDenominations) {
-      while (remaining >= denom) {
+    // Filter out zero and invalid denominations, sort descending
+    const validDenoms = this.config.splitDenominations
+      .filter(d => d > BigInt(0))
+      .sort((a, b) => (b > a ? 1 : b < a ? -1 : 0));
+
+    // If no valid denominations, return the amount as-is
+    if (validDenoms.length === 0) {
+      return [amount];
+    }
+
+    // Limit iterations to prevent infinite loops
+    const maxIterations = 1000;
+    let iterations = 0;
+
+    for (const denom of validDenoms) {
+      while (remaining >= denom && iterations < maxIterations) {
         result.push(denom);
         remaining -= denom;
+        iterations++;
       }
     }
 

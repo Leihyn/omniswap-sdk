@@ -97,9 +97,9 @@ export class RefundManager {
           swapId: execution.swapId,
           htlcId: step.htlcId,
           chain: step.chain!,
-          timelock: (step as any).timelock || Math.floor(Date.now() / 1000) + 3600,
+          timelock: step.timelock || Math.floor(Date.now() / 1000) + 3600,
           amount: execution.route.hops[0]?.fee || BigInt(0),
-          refundAddress: execution.route.hops[0]?.fromAsset?.chain
+          refundAddress: execution.route.hops[0]?.fromAsset?.chain && execution.solver
             ? execution.solver.address[execution.route.hops[0].fromChain] || ''
             : '',
           attempts: 0,

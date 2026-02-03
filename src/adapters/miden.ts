@@ -336,7 +336,8 @@ export class MidenAdapter extends BaseChainAdapter {
     // Miden fees based on proof complexity
     const baseProofCost = BigInt(50000);
     const noteCost = BigInt(10000);
-    const scriptComplexity = BigInt((tx.noteScript?.length || 0) * 100);
+    const noteScript = tx.noteScript as string | undefined;
+    const scriptComplexity = BigInt((noteScript?.length || 0) * 100);
 
     return baseProofCost + noteCost + scriptComplexity;
   }
@@ -356,7 +357,7 @@ export class MidenAdapter extends BaseChainAdapter {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tx),
       });
-      const data = await response.json();
+      const data = await response.json() as { proof: string };
       return data.proof;
     }
 
